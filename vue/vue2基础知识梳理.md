@@ -1017,5 +1017,157 @@ https://vue3js.cn
 
 https://blog.csdn.net/m0_46171043/article/details/12233063
 
-# 
+# 5.SPA首屏加载缓慢怎么解决
+
+## 5.1首屏加载的含义
+
+⾸屏时间（First Contentful Paint），指的是浏览器从响应⽤户输⼊⽹址地址，到⾸屏内容渲染完成的时间，此时整个⽹页不⼀定要全部渲染完成，但需要展⽰当前视窗需要的内容
+
+⾸屏加载可以说是⽤户体验中最重要的环节
+关于计算⾸屏时间 利⽤performance.timing提供的数据：
+
+通过DOMContentLoad或者performance来计算出⾸屏时间
+
+```
+// ⽅案⼀：
+document.addEventListener('DOMContentLoaded', (event) => {
+    console.log('first contentful painting');
+});
+// ⽅案⼆：
+performance.getEntriesByName("first-contentful-paint")[0].startTime
+// performance.getEntriesByName("first-contentful-paint")[0]
+// 会返回⼀个 PerformancePaintTiming的实例，结构如下：
+{
+  name: "first-contentful-paint",
+  entryType: "paint",
+  startTime: 507.80000002123415,
+  duration: 0,
+
+}
+```
+
+## 5.2缓慢原因
+
+### 页⾯渲染的过程，导致加载速度慢的因素可能如下：
+
+⽹络延时问题
+资源⽂件体积是否过⼤
+资源是否重复发送请求去加载了
+
+加载脚本的时候，渲染内容堵塞了
+
+## 5.3解决方案
+
+### 常见的⼏种SPA⾸屏优化⽅式
+
+减⼩⼊⼝⽂件体积
+静态资源本地缓存
+UI框架按需加载
+图⽚资源的压缩
+组件重复打包
+开启GZip压缩
+
+使⽤SSR
+
+### 减⼩⼊⼝⽂件体积
+常⽤的⼿段是路由懒加载，把不同路由对应的组件分割成不同的代码块，待路由被请求的时候会单独打包路由，使得⼊⼝⽂件变⼩，加载速
+度⼤⼤增加
+在vue-router配置路由的时候，采⽤动态加载路由的形式
+
+```
+routes:[ 
+    path: 'Blogs',
+    name: 'ShowBlogs',
+    component: () => import('./components/ShowBlogs.vue')
+]
+```
+
+以函数的形式加载路由，这样就可以把各⾃的路由⽂件分别打包，只有在解析给定的路由时，才会加载路由组件
+
+### 静态资源本地缓存
+
+后端返回资源问题：
+采⽤HTTP缓存，设置Cache-Control，Last-Modified，Etag等响应头
+采⽤Service Worker离线缓存
+前端合理利⽤localStorage
+UI框架按需加载
+在⽇常使⽤UI框架，例如element-UI、或者antd，我们经常性直接饮⽤整个UI库
+
+```
+import ElementUI from 'element-ui'
+Vue.use(ElementUI)
+```
+
+但实际上我⽤到的组件只有按钮，分页，表格，输⼊与警告 所以我们要按需引⽤
+
+```
+import { Button, Input, Pagination, Table, TableColumn, MessageBox } from 'element-ui';
+Vue.use(Button)
+Vue.use(Input)
+Vue.use(Pagination)
+```
+
+### 组件重复打包
+
+假设A.js⽂件是⼀个常⽤的库，现在有多个路由使⽤了A.js⽂件，这就造成了重复下载
+
+解决⽅案：在webpack的config⽂件中，修改CommonsChunkPlugin的配置
+
+```
+minChunks: 3
+```
+
+minChunks为3表⽰会把使⽤3次及以上的包抽离出来，放进公共依赖⽂件，避免了重复加载组件
+
+### 图⽚资源的压缩
+
+图⽚资源虽然不在编码过程中，但它却是对页⾯性能影响最⼤的因素
+对于所有的图⽚资源，我们可以进⾏适当的压缩
+对页⾯上使⽤到的icon，可以使⽤在线字体图标，或者雪碧图，将众多⼩图标合并到同⼀张图上，⽤以减轻http请求压⼒。
+开启GZip压缩
+拆完包之后，我们再⽤gzip做⼀下压缩 安装compression-webpack-plugin
+
+```
+cnmp i compression-webpack-plugin -D
+```
+
+在vue.config.js中引⼊并修改webpack配置
+
+```
+const CompressionPlugin = require('compression-webpack-plugin')
+
+configureWebpack: (config) => {
+        if (process.env.NODE_ENV === 'production') {
+            // 为⽣产环境修改配置...
+            config.mode = 'production'
+            return {
+                plugins: [new CompressionPlugin({
+                    test: /\.js$|\.html$|\.css/, //匹配⽂件名
+                    threshold: 10240, //对超过10k的数据进⾏压缩
+                    deleteOriginalAssets: false //是否删除原⽂件
+                })]
+            }
+        }
+```
+
+在服务器我们也要做相应的配置 如果发送请求的浏览器⽀持gzip，就发送给它gzip格式的⽂件 我的服务器是⽤express框架搭建的 只要安装
+⼀下compression就能使⽤
+
+```
+const compression = require('compression')
+app.use(compression())  // 在其他中间件使⽤之前调⽤
+```
+
+### 使⽤SSR
+
+SSR（Server side ），也就是服务端渲染，组件或页⾯通过服务器⽣成html字符串，再发送到浏览器
+
+从头搭建⼀个服务端渲染是很复杂的，vue应⽤建议使⽤Nuxt.js实现服务端渲染
+
+⼩结：
+减少⾸屏渲染时间的⽅法有很多，总的来讲可以分成两⼤部分 ：资源加载优化 和 页⾯渲染优化
+
+参考链接：https://wenku.baidu.com/view/9c19c15602f69e3143323968011ca300a6c3f614.html
+
+# 6.vue中，key的原理
 
