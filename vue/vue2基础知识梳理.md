@@ -670,10 +670,11 @@ function initData (vm: Component) {
 
 仔细阅读上面的代码，我们可以得到以下结论：
 
-初始化顺序：props、methods、data
-data定义的时候可选择函数形式或者对象形式(组件只能为函数形式)
-关于数据响应式在这就不展示详细说明了
-上文提到挂载方法是调用vm.$mount方法
+- 初始化顺序：props、methods、data
+
+- data定义的时候可选择函数形式或者对象形式(组件只能为函数形式)
+- 关于数据响应式在这就不展示详细说明了
+- 上文提到挂载方法是调用vm.$mount方法
 
 源码：
 
@@ -1050,24 +1051,24 @@ performance.getEntriesByName("first-contentful-paint")[0].startTime
 
 ### 页⾯渲染的过程，导致加载速度慢的因素可能如下：
 
-⽹络延时问题
-资源⽂件体积是否过⼤
-资源是否重复发送请求去加载了
+- ⽹络延时问题
+  资源⽂件体积是否过⼤
+  资源是否重复发送请求去加载了
+- 加载脚本的时候，渲染内容堵塞了
 
-加载脚本的时候，渲染内容堵塞了
 
 ## 5.3解决方案
 
 ### 常见的⼏种SPA⾸屏优化⽅式
 
-减⼩⼊⼝⽂件体积
-静态资源本地缓存
-UI框架按需加载
-图⽚资源的压缩
-组件重复打包
-开启GZip压缩
+- 减⼩⼊⼝⽂件体积
+  静态资源本地缓存
+  UI框架按需加载
+  图⽚资源的压缩
+  组件重复打包
+  开启GZip压缩
+- 使⽤SSR
 
-使⽤SSR
 
 ### 减⼩⼊⼝⽂件体积
 常⽤的⼿段是路由懒加载，把不同路由对应的组件分割成不同的代码块，待路由被请求的时候会单独打包路由，使得⼊⼝⽂件变⼩，加载速
@@ -1845,7 +1846,7 @@ export default {
 	}
 	
 	}
-	
+
 # 10.说说Vue中,key的原理
 
 ## 1.key值的作用
@@ -2988,3 +2989,1727 @@ export function genElement (el, state) {
 
 理清了 Vue 模板编译的整个过程，重点都放在了解析 HTML 生成 AST 的部分。本文只是大致讲述了主要流程，其中省略了特别多的细节，比如：对 template/slot 的处理、指令的处理等等，如果想了解其中的细节可以直接阅读源码。希望大家在阅读这篇文章后有所收获。
 
+# 13 vue中computed和watch区别
+
+## 计算属性computed :
+
+1. 支持缓存，只有依赖数据发生改变，才会重新进行计算
+2. 不支持异步，当computed内有异步操作时无效，无法监听数据的变化
+3. computed 属性值会默认走缓存，计算属性是基于它们的响应式依赖进行缓存的，也就是基于data中声明过或者父组件传递的props中的数据通过计算得到的值
+4. 如果一个属性是由其他属性计算而来的，这个属性依赖其他属性，是一个多对一或者一对一，一般用computed
+5. 如果computed属性属性值是函数，那么默认会走get方法；函数的返回值就是属性的属性值；在computed中的，属性都有一个get和一个set方法，当数据变化时，调用set方法。
+
+## 侦听属性watch：
+
+1. 不支持缓存，数据变，直接会触发相应的操作；
+2. watch支持异步；
+3. 监听的函数接收两个参数，第一个参数是最新的值；第二个参数是输入之前的值；
+4. 当一个属性发生变化时，需要执行对应的操作；一对多；
+5. 监听数据必须是data中声明过或者父组件传递过来的props中的数据，当数据变化时，触发其他操作，函数有两个参数，
+    　immediate：组件加载立即触发回调函数执行，
+        　deep: 深度监听，为了发现对象内部值的变化，复杂类型的数据时使用，例如数组中的对象内容的改变，注意监听数组的变动不需要这么做。注意：deep无法监听到数组的变动和对象的新增，参考vue数组变异,只有以响应式的方式触发才会被监听到。
+
+## 总结
+
+　　**watch和computed都是以Vue的依赖追踪机制为基础**的，当某一个依赖型数据（依赖型数据：简单理解即放在 data 等对象下的实例数据）发生变化的时候，所有依赖这个数据的相关数据会自动发生变化，即自动调用相关的函数，来实现数据的变动。
+
+　　**当依赖的值变化时，在watch中，是可以做一些复杂的操作的，而computed中的依赖，仅仅是一个值依赖于另一个值，是值上的依赖。**
+
+应用场景：
+
+computed：用于处理复杂的逻辑运算；一个数据受一个或多个数据影响；用来处理watch和methods无法处理的，或处理起来不方便的情况。例如处理模板中的复杂表达式、购物车里面的商品数量和总金额之间的变化关系等。
+
+watch：用来处理当一个属性发生变化时，需要执行某些具体的业务逻辑操作，或要在数据变化时执行异步或开销较大的操作；一个数据改变影响多个数据。例如用来监控路由、inpurt 输入框值的特殊处理等。
+
+区别：
+
+computed
+
+- 初始化显示或者相关的 data、props 等属性数据发生变化的时候调用；
+- 计算属性不在 data 中，它是基于data 或 props 中的数据通过计算得到的一个新值，这个新值根据已知值的变化而变化；
+- 在 computed 属性对象中定义计算属性的方法，和取data对象里的数据属性一样，以属性访问的形式调用；
+- 如果 computed 属性值是函数，那么默认会走 get 方法，必须要有一个返回值，函数的返回值就是属性的属性值；
+- computed 属性值默认会**缓存**计算结果，在重复的调用中，只要依赖数据不变，直接取缓存中的计算结果，只有**依赖型数据**发生**改变**，computed 才会重新计算；
+- 在computed中的，属性都有一个 get 和一个 set 方法，当数据变化时，调用 set 方法。
+
+watch
+
+- 主要用来监听某些特定数据的变化，从而进行某些具体的业务逻辑操作，可以看作是 computed 和 methods 的结合体；
+- 可以监听的数据来源：data，props，computed内的数据；
+- watch**支持异步**；
+- **不支持缓存**，监听的数据改变，直接会触发相应的操作；
+- 监听函数有两个参数，第一个参数是最新的值，第二个参数是输入之前的值，顺序一定是新值，旧值。
+
+## computed如何实现缓存
+
+其实就是使用dirty标志位来标识数据有没有更新，
+ 在计算属性初始化时，会将computed对象中的每一个key创建一个watcher，当值发生变化的时候，会调用update方法将dirty置为true，当每次取值时会根据dirty来判断是重新计算还是直接读取值，如果dirty为true，调用evaluate函数重新计算，将dirty置为false；如果dirty为false，直接读取值。
+
+```
+Object.defineProperty(target, key, { 
+    get() {
+        // 从刚刚说过的组件实例上拿到 computed watcher
+        const watcher = this._computedWatchers && this._computedWatchers[key]
+        if (watcher) {
+          // 条件成立说明值更新过，需要重新计算
+          if (watcher.dirty) {
+            // 这里会求值 调用 get
+            watcher.evaluate()
+          }
+          if (Dep.target) {
+            watcher.depend()
+          }
+          // 最后返回计算出来的值
+          return watcher.value
+        }
+    }
+
+evaluate () {
+  // 调用 get 函数求值
+  this.value = this.get()
+  // 把 dirty 标记为 false
+  this.dirty = false
+}
+
+update () {
+  if (this.lazy) {
+    this.dirty = true
+  }
+}
+```
+
+# 14 自定义指令是什么？有什么应用场景
+
+## 什么是指令
+
+vue提供的一套为数据驱动视图更为方便的操作，这些操作被称为指令系统
+
+自定义指令: 全局注册和局部注册
+
+全局注册：Vue.directive方法进行注册
+
+局部注册：通过options选项中设置directive属性
+
+## 自定义指令
+
+- bind
+
+  只调用一次，指令第一次绑定到元素时调用。在这里可以进行一次性的初始化设置
+
+- inserted
+
+  被绑定元素插入父节点时调用
+
+- update
+
+​		所在组件的VNode更新时调用，但是可能发生在其子VNode更新之前。指令的值可能发生了改变，也可能没有。但是你可以通过比较更新前后的值来忽略不必要的模板更新		
+
+- componentUpdated
+
+​		指令所在组件的VNode及其子VNode全部更新后调用
+
+- unbind
+
+  只调用一次，指令与元素解绑时调用
+
+所有的钩子函数的参数都有以下：
+
+- el：指令所绑定的元素，可以用来直接操作 DOM
+
+- binding：一个对象，包含以下 property：
+
+- name：指令名，不包括 v- 前缀。
+
+- value：指令的绑定值，例如：v-my-directive="1 + 1" 中，绑定值为 2。
+
+- oldValue：指令绑定的前一个值，仅在 update 和 componentUpdated 钩子中可用。无论值是否改变都可用。
+
+- expression：字符串形式的指令表达式。例如 v-my-directive="1 + 1" 中，表达式为 "1 + 1"。
+
+- arg：传给指令的参数，可选。例如 v-my-directive:foo 中，参数为 "foo"。
+
+- modifiers：一个包含修饰符的对象。例如：v-my-directive.foo.bar 中，修饰符对象为 { foo: true, bar: true }
+
+- vnode：Vue 编译生成的虚拟节点
+
+- oldVnode：上一个虚拟节点，仅在 update 和 componentUpdated 钩子中可用
+
+除了 el 之外，其它参数都应该是只读的，切勿进行修改。如果需要在钩子之间共享数据，建议通过元素的 dataset 来进行
+
+举个例子：
+
+<div v-demo="{ color: 'white', text: 'hello!' }"></div>
+<script>
+    Vue.directive('demo', function (el, binding) {
+        console.log(binding.value.color) // "white"
+        console.log(binding.value.text)  // "hello!"
+    })
+</script>
+
+## 应用场景
+
+自定义组件的案例：
+
+- 防抖
+- 图片懒加载
+- 一键Copy的功能
+
+### 输入框防抖
+
+防抖这种情况设置一个v-throttle自定义指令来实现
+
+举个例子：
+
+```
+// 1.设置v-throttle自定义指令
+Vue.directive('throttle', {
+  bind: (el, binding) => {
+    let throttleTime = binding.value; // 防抖时间
+    if (!throttleTime) { // 用户若不设置防抖时间，则默认2s
+      throttleTime = 2000;
+    }
+    let cbFun;
+    el.addEventListener('click', event => {
+      if (!cbFun) { // 第一次执行
+        cbFun = setTimeout(() => {
+          cbFun = null;
+        }, throttleTime);
+      } else {
+        event && event.stopImmediatePropagation();
+      }
+    }, true);
+  },
+});
+// 2.为button标签设置v-throttle自定义指令
+<button @click="sayHello" v-throttle>提交</button>
+```
+
+### 图片懒加载
+
+设置一个v-lazy自定义组件完成图片懒加载
+
+```
+const LazyLoad = {
+    // install方法
+    install(Vue,options){
+       // 代替图片的loading图
+        let defaultSrc = options.default;
+        Vue.directive('lazy',{
+            bind(el,binding){
+                LazyLoad.init(el,binding.value,defaultSrc);
+            },
+            inserted(el){
+                // 兼容处理
+                if('IntersectionObserver' in window){
+                    LazyLoad.observe(el);
+                }else{
+                    LazyLoad.listenerScroll(el);
+                }             
+```
+
+         },
+        })
+    },
+    // 初始化
+    init(el,val,def){
+        // data-src 储存真实src
+        el.setAttribute('data-src',val);
+        // 设置src为loading图
+        el.setAttribute('src',def);
+    },
+    // 利用IntersectionObserver监听el
+    observe(el){
+        let io = new IntersectionObserver(entries => {
+            let realSrc = el.dataset.src;
+            if(entries[0].isIntersecting){
+                if(realSrc){
+                    el.src = realSrc;
+                    el.removeAttribute('data-src');
+                }
+            }
+        });
+        io.observe(el);
+    },
+    // 监听scroll事件
+    listenerScroll(el){
+        let handler = LazyLoad.throttle(LazyLoad.load,300);
+        LazyLoad.load(el);
+        window.addEventListener('scroll',() => {
+            handler(el);
+        });
+    },
+    // 加载真实图片
+    load(el){
+        let windowHeight = document.documentElement.clientHeight
+        let elTop = el.getBoundingClientRect().top;
+        let elBtm = el.getBoundingClientRect().bottom;
+        let realSrc = el.dataset.src;
+        if(elTop - windowHeight<0&&elBtm > 0){
+            if(realSrc){
+                el.src = realSrc;
+                el.removeAttribute('data-src');
+            }
+        }
+    },
+    // 节流
+    throttle(fn,delay){
+        let timer; 
+        let prevTime;
+        return function(...args){
+            let currTime = Date.now();
+            let context = this;
+            if(!prevTime) prevTime = currTime;
+            clearTimeout(timer);
+            
+            if(currTime - prevTime > delay){
+                prevTime = currTime;
+                fn.apply(context,args);
+                clearTimeout(timer);
+                return;
+            }
+     
+            timer = setTimeout(function(){
+                prevTime = Date.now();
+                timer = null;
+                fn.apply(context,args);
+            },delay);
+        }
+    }
+
+```
+}
+export default LazyLoad;
+```
+
+### 一键 Copy的功能
+
+```
+import { Message } from 'ant-design-vue';
+
+const vCopy = { //
+  /*
+    bind 钩子函数，第一次绑定时调用，可以在这里做初始化设置
+    el: 作用的 dom 对象
+    value: 传给指令的值，也就是我们要 copy 的值
+  */
+  bind(el, { value }) {
+    el.$value = value; // 用一个全局属性来存传进来的值，因为这个值在别的钩子函数里还会用到
+    el.handler = () => {
+      if (!el.$value) {
+      // 值为空的时候，给出提示，我这里的提示是用的 ant-design-vue 的提示，你们随意
+        Message.warning('无复制内容');
+        return;
+      }
+      // 动态创建 textarea 标签
+      const textarea = document.createElement('textarea');
+      // 将该 textarea 设为 readonly 防止 iOS 下自动唤起键盘，同时将 textarea 移出可视区域
+      textarea.readOnly = 'readonly';
+      textarea.style.position = 'absolute';
+      textarea.style.left = '-9999px';
+      // 将要 copy 的值赋给 textarea 标签的 value 属性
+      textarea.value = el.$value;
+      // 将 textarea 插入到 body 中
+      document.body.appendChild(textarea);
+      // 选中值并复制
+      textarea.select();
+      // textarea.setSelectionRange(0, textarea.value.length);
+      const result = document.execCommand('Copy');
+      if (result) {
+        Message.success('复制成功');
+      }
+      document.body.removeChild(textarea);
+    };
+    // 绑定点击事件，就是所谓的一键 copy 啦
+    el.addEventListener('click', el.handler);
+  },
+  // 当传进来的值更新的时候触发
+  componentUpdated(el, { value }) {
+    el.$value = value;
+  },
+  // 指令与元素解绑的时候，移除事件绑定
+  unbind(el) {
+    el.removeEventListener('click', el.handler);
+  },
+};
+
+export default vCopy;
+```
+
+关于自定义组件还有很多应用场景，如：拖拽指令、页面水印、权限校验等等应用场景
+
+
+# 15 说说你对Vue中keep-alive的理解
+
+## 什么是keep-alive?
+
+keep-alive是Vue提供给我们一个内置组件，他可以用来保存我们路由切换时组件的状态
+
+组件使用keep-alive以后会新增两个生命周期 actived() deactived(),
+我们在切换路由的时候，想保存组件的状态，比如列表页面进入详情，我们想保存列表滚动的位置，我们就可以使用keep-alive保存列表页面的滚动位置。
+
+### 简单理解
+
+当我们从首页–>列表页–>商详页–>返回到列表页(需要缓存)–>返回到首页(需要缓存)–>再次进入列表页(不需要缓存)，这时候就是按需来控制页面的keep-alive了。
+
+### 参数理解 
+
+- keep-alive可以接收3个属性做为参数进行匹配对应的组件进行缓存:
+- include包含的组件(可以为字符串，数组，以及正则表达式,只有匹配的组件会被缓存)
+
+- exclude排除的组件(以为字符串，数组，以及正则表达式,任何匹配的组件都不会被缓存)
+
+- max缓存组件的最大值(类型为字符或者数字,可以控制缓存组件的个数)
+
+
+注：当使用正则表达式或者数组时，一定要使用v-bind
+代码示例：
+
+```
+// 只缓存组件name为a或者b的组件
+<keep-alive include="a,b"> 
+  <component />
+</keep-alive>
+
+// 组件name为c的组件不缓存(可以保留它的状态或避免重新渲染)
+<keep-alive exclude="c"> 
+  <component />
+</keep-alive>
+
+// 如果同时使用include,exclude,那么exclude优先于include， 下面的例子只缓存a组件
+<keep-alive include="a,b" exclude="b"> 
+  <component />
+</keep-alive>
+
+// 如果缓存的组件超过了max设定的值5，那么将删除第一个缓存的组件
+<keep-alive exclude="c" max="5"> 
+  <component />
+</keep-alive>
+```
+
+
+
+## 配合router使用
+
+router-view也是一个组件，如果直接被包在keepalive里面，那么所有路径匹配到的视图组件都会被缓存，如下：
+
+```
+<keep-alive>
+    <router-view>
+        <!-- 所有路径匹配到的视图组件都会被缓存！ -->
+    </router-view>
+</keep-alive>
+```
+
+如果只想要router-view里面的某个组件被缓存，怎么办？
+
+- 使用 include/exclude
+
+- 使用 meta 属性
+
+1.使用 include (exclude例子类似)
+
+```
+//只有路径匹配到的 name 为 a 组件会被缓存
+<keep-alive include="a">
+    <router-view></router-view>
+</keep-alive>
+```
+
+2.2.使用 meta 属性
+
+```
+// routes 配置
+export default [
+  {
+    path: '/',
+    name: 'home',
+    component: Home,
+    meta: {
+      keepAlive: true // 需要被缓存
+    }
+  }, {
+    path: '/profile',
+    name: 'profile',
+    component: Profile,
+    meta: {
+      keepAlive: false // 不需要被缓存
+    }
+  }
+]
+<router-view v-if="!$route.meta.keepAlive">
+    <!-- 这里是不会被缓存的视图组件，比如 Profile！ -->
+</router-view>
+
+<keep-alive>
+    <router-view v-if="$route.meta.keepAlive">
+        <!-- 这里是会被缓存的视图组件，比如 Home！ -->
+    </router-view>
+</keep-alive>
+
+<router-view v-if="!$route.meta.keepAlive">
+    <!-- 这里是不会被缓存的视图组件，比如 Profile！ -->
+</router-view>
+```
+
+
+
+## 小结
+
+- 1.keep-alive 先匹配被包含组件的 name 字段，如果 name 不可用，则匹配当前组件 components 配置中的注册名称。
+- 2.keep-alive 不会在函数式组件中正常工作，因为它们没有缓存实例。
+
+- 3.当匹配条件同时在 include 与 exclude 存在时，以 exclude 优先级最高(当前vue 2.4.2 version)。比如：包含于排除同时匹配到了组件A，那组件A不会被缓存。
+
+- 4.包含在 keep-alive 中，但符合 exclude ，不会调用activated和 deactivated。
+
+
+
+# 17 什么是虚拟DOM? 如何实现一个虚拟DOM? 说说你的思路
+
+## 一、什么是虚拟DOM
+
+虚拟 DOM （Virtual DOM ）这个概念相信大家都不陌生，从 [React](https://so.csdn.net/so/search?q=React&spm=1001.2101.3001.7020) 到 Vue ，虚拟 DOM 为这两个框架都带来了跨平台的能力（React-Native 和 Weex）
+
+实际上它只是一层对真实DOM的抽象，以JavaScript 对象 (VNode 节点) 作为基础的树，用对象的属性来描述节点，最终可以通过一系列操作使这棵树映射到真实环境上
+
+在Javascript对象中，虚拟DOM 表现为一个 Object对象。并且最少包含标签名 (tag)、属性 (attrs) 和子元素对象 (children) 三个属性，不同[框架](https://so.csdn.net/so/search?q=框架&spm=1001.2101.3001.7020)对这三个属性的名命可能会有差别
+
+创建虚拟DOM就是为了更好将虚拟的节点渲染到页面视图中，所以虚拟DOM对象的节点与真实DOM的属性一一照应
+
+在vue中同样使用到了虚拟DOM技术
+
+**定义真实DOM**
+
+```javascript
+<div id="app">
+    <p class="p">节点内容</p>
+    <h3>{{ foo }}</h3>
+</div>
+1234
+```
+
+**实例化vue**
+
+```javascript
+const app = new Vue({
+    el:"#app",
+    data:{
+        foo:"foo"
+    }
+})
+123456
+```
+
+**观察render的render，我们能得到虚拟DOM**
+
+```javascript
+(function anonymous() {
+ with(this){return _c('div',{attrs:{"id":"app"}},[_c('p',{staticClass:"p"},
+       [_v("节点内容")]),_v(" "),_c('h3',[_v(_s(foo))])])}})
+123
+```
+
+通过VNode，vue可以对这颗抽象树进行创建节点,删除节点以及修改节点的操作， 经过diff算法得出一些需要修改的最小单位,再更新视图，减少了dom操作，提高了性能
+
+## 二、为什么需要虚拟DOM
+
+DOM是很慢的，其元素非常庞大，页面的性能问题，大部分都是由DOM操作引起的
+
+真实的DOM节点，哪怕一个最简单的div也包含着很多属性，可以打印出来直观感受一下：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/2021011721024630.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQxNTU1ODU0,size_16,color_FFFFFF,t_70)
+由此可见，操作DOM的代价仍旧是昂贵的，频繁操作还是会出现页面卡顿，影响用户的体验
+
+举个例子：
+
+你用传统的原生api或jQuery去操作DOM时，浏览器会从构建DOM树开始从头到尾执行一遍流程
+
+当你在一次操作时，需要更新10个DOM节点，浏览器没这么智能，收到第一个更新DOM请求后，并不知道后续还有9次更新操作，因此会马上执行流程，最终执行10次流程
+
+而通过VNode，同样更新10个DOM节点，虚拟DOM不会立即操作DOM，而是将这10次更新的diff内容保存到本地的一个js对象中，最终将这个js对象一次性attach到DOM树上，避免大量的无谓计算
+
+> 很多人认为虚拟 DOM 最大的优势是 diff 算法，减少 JavaScript 操作真实 DOM 的带来的性能消耗。虽然这一个虚拟 DOM 带来的一个优势，但并不是全部。虚拟 DOM 最大的优势在于抽象了原本的渲染过程，实现了跨平台的能力，而不仅仅局限于浏览器的 DOM，可以是安卓和 IOS 的原生组件，可以是近期很火热的小程序，也可以是各种GUI
+
+## 三、如何实现虚拟DOM
+
+首先可以看看vue中VNode的结构
+
+源码位置：src/core/vdom/vnode.js
+
+```javascript
+export default class VNode {
+  tag: string | void;
+  data: VNodeData | void;
+  children: ?Array<VNode>;
+  text: string | void;
+  elm: Node | void;
+  ns: string | void;
+  context: Component | void; // rendered in this component's scope
+  functionalContext: Component | void; // only for functional component root nodes
+  key: string | number | void;
+  componentOptions: VNodeComponentOptions | void;
+  componentInstance: Component | void; // component instance
+  parent: VNode | void; // component placeholder node
+  raw: boolean; // contains raw HTML? (server only)
+  isStatic: boolean; // hoisted static node
+  isRootInsert: boolean; // necessary for enter transition check
+  isComment: boolean; // empty comment placeholder?
+  isCloned: boolean; // is a cloned node?
+  isOnce: boolean; // is a v-once node?
+
+  constructor (
+    tag?: string,
+    data?: VNodeData,
+    children?: ?Array<VNode>,
+    text?: string,
+    elm?: Node,
+    context?: Component,
+    componentOptions?: VNodeComponentOptions
+  ) {
+    /*当前节点的标签名*/
+    this.tag = tag
+    /*当前节点对应的对象，包含了具体的一些数据信息，是一个VNodeData类型，可以参考VNodeData类型中的数据信息*/
+    this.data = data
+    /*当前节点的子节点，是一个数组*/
+    this.children = children
+    /*当前节点的文本*/
+    this.text = text
+    /*当前虚拟节点对应的真实dom节点*/
+    this.elm = elm
+    /*当前节点的名字空间*/
+    this.ns = undefined
+    /*编译作用域*/
+    this.context = context
+    /*函数化组件作用域*/
+    this.functionalContext = undefined
+    /*节点的key属性，被当作节点的标志，用以优化*/
+    this.key = data && data.key
+    /*组件的option选项*/
+    this.componentOptions = componentOptions
+    /*当前节点对应的组件的实例*/
+    this.componentInstance = undefined
+    /*当前节点的父节点*/
+    this.parent = undefined
+    /*简而言之就是是否为原生HTML或只是普通文本，innerHTML的时候为true，textContent的时候为false*/
+    this.raw = false
+    /*静态节点标志*/
+    this.isStatic = false
+    /*是否作为跟节点插入*/
+    this.isRootInsert = true
+    /*是否为注释节点*/
+    this.isComment = false
+    /*是否为克隆节点*/
+    this.isCloned = false
+    /*是否有v-once指令*/
+    this.isOnce = false
+  }
+
+  // DEPRECATED: alias for componentInstance for backwards compat.
+  /* istanbul ignore next https://github.com/answershuto/learnVue*/
+  get child (): Component | void {
+    return this.componentInstance
+  }
+}
+12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273
+```
+
+这里对VNode进行稍微的说明：
+
+所有对象的 context 选项都指向了 Vue 实例
+elm 属性则指向了其相对应的真实 DOM 节点
+vue是通过createElement生成VNode
+
+源码位置：src/core/vdom/create-element.js
+
+```javascript
+export function createElement (
+  context: Component,
+  tag: any,
+  data: any,
+  children: any,
+  normalizationType: any,
+  alwaysNormalize: boolean
+): VNode | Array<VNode> {
+  if (Array.isArray(data) || isPrimitive(data)) {
+    normalizationType = children
+    children = data
+    data = undefined
+  }
+  if (isTrue(alwaysNormalize)) {
+    normalizationType = ALWAYS_NORMALIZE
+  }
+  return _createElement(context, tag, data, children, normalizationType)
+}
+123456789101112131415161718
+```
+
+上面可以看到createElement 方法实际上是对 _createElement 方法的封装，对参数的传入进行了判断
+
+```javascript
+export function _createElement(
+    context: Component,
+    tag?: string | Class<Component> | Function | Object,
+    data?: VNodeData,
+    children?: any,
+    normalizationType?: number
+): VNode | Array<VNode> {
+    if (isDef(data) && isDef((data: any).__ob__)) {
+        process.env.NODE_ENV !== 'production' && warn(
+            `Avoid using observed data object as vnode data: ${JSON.stringify(data)}\n` +
+            'Always create fresh vnode data objects in each render!',
+            context`
+        )
+        return createEmptyVNode()
+    }
+    // object syntax in v-bind
+    if (isDef(data) && isDef(data.is)) {
+        tag = data.is
+    }
+    if (!tag) {
+        // in case of component :is set to falsy value
+        return createEmptyVNode()
+    }
+    ... 
+    // support single function children as default scoped slot
+    if (Array.isArray(children) &&
+        typeof children[0] === 'function'
+    ) {
+        data = data || {}
+        data.scopedSlots = { default: children[0] }
+        children.length = 0
+    }
+    if (normalizationType === ALWAYS_NORMALIZE) {
+        children = normalizeChildren(children)
+    } else if ( === SIMPLE_NORMALIZE) {
+        children = simpleNormalizeChildren(children)
+    }
+ // 创建VNode
+    ...
+}
+12345678910111213141516171819202122232425262728293031323334353637383940
+```
+
+可以看到_createElement接收5个参数：
+
+context 表示 VNode 的上下文环境，是 Component 类型
+
+tag 表示标签，它可以是一个字符串，也可以是一个 Component
+
+data 表示 VNode 的数据，它是一个 VNodeData 类型
+
+children 表示当前 VNode的子节点，它是任意类型的
+
+normalizationType 表示子节点规范的类型，类型不同规范的方法也就不一样，主要是参考 render 函数是编译生成的还是用户手写的
+
+根据normalizationType 的类型，children会有不同的定义
+
+```javascript
+if (normalizationType === ALWAYS_NORMALIZE) {
+    children = normalizeChildren(children)
+} else if ( === SIMPLE_NORMALIZE) {
+    children = simpleNormalizeChildren(children)
+}
+12345
+```
+
+simpleNormalizeChildren方法调用场景是 render 函数是编译生成的
+
+normalizeChildren方法调用场景分为下面两种：
+
+render 函数是用户手写的
+编译 slot、v-for 的时候会产生嵌套数组
+无论是simpleNormalizeChildren还是normalizeChildren都是对children进行规范（使children 变成了一个类型为 VNode 的 Array），这里就不展开说了
+
+规范化children的源码位置在：src/core/vdom/helpers/normalzie-children.js
+
+在规范化children后，就去创建VNode
+
+```javascript
+let vnode, ns
+// 对tag进行判断
+if (typeof tag === 'string') {
+  let Ctor
+  ns = (context.$vnode && context.$vnode.ns) || config.getTagNamespace(tag)
+  if (config.isReservedTag(tag)) {
+    // 如果是内置的节点，则直接创建一个普通VNode
+    vnode = new VNode(
+      config.parsePlatformTagName(tag), data, children,
+      undefined, undefined, context
+    )
+  } else if (isDef(Ctor = resolveAsset(context.$options, 'components', tag))) {
+    // component
+    // 如果是component类型，则会通过createComponent创建VNode节点
+    vnode = createComponent(Ctor, data, context, children, tag)
+  } else {
+    vnode = new VNode(
+      tag, data, children,
+      undefined, undefined, context
+    )
+  }
+} else {
+  // direct component options / constructor
+  vnode = createComponent(tag, data, context, children)
+}
+12345678910111213141516171819202122232425
+```
+
+createComponent同样是创建VNode
+
+源码位置：src/core/vdom/create-component.js
+
+```javascript
+export function createComponent (
+  Ctor: Class<Component> | Function | Object | void,
+  data: ?VNodeData,
+  context: Component,
+  children: ?Array<VNode>,
+  tag?: string
+): VNode | Array<VNode> | void {
+  if (isUndef(Ctor)) {
+    return
+  }
+ // 构建子类构造函数 
+  const baseCtor = context.$options._base
+
+  // plain options object: turn it into a constructor
+  if (isObject(Ctor)) {
+    Ctor = baseCtor.extend(Ctor)
+  }
+
+  // if at this stage it's not a constructor or an async component factory,
+  // reject.
+  if (typeof Ctor !== 'function') {
+    if (process.env.NODE_ENV !== 'production') {
+      warn(`Invalid Component definition: ${String(Ctor)}`, context)
+    }
+    return
+  }
+
+  // async component
+  let asyncFactory
+  if (isUndef(Ctor.cid)) {
+    asyncFactory = Ctor
+    Ctor = resolveAsyncComponent(asyncFactory, baseCtor, context)
+    if (Ctor === undefined) {
+      return createAsyncPlaceholder(
+        asyncFactory,
+        data,
+        context,
+        children,
+        tag
+      )
+    }
+  }
+
+  data = data || {}
+
+  // resolve constructor options in case global mixins are applied after
+  // component constructor creation
+  resolveConstructorOptions(Ctor)
+
+  // transform component v-model data into props & events
+  if (isDef(data.model)) {
+    transformModel(Ctor.options, data)
+  }
+
+  // extract props
+  const propsData = extractPropsFromVNodeData(data, Ctor, tag)
+
+  // functional component
+  if (isTrue(Ctor.options.functional)) {
+    return createFunctionalComponent(Ctor, propsData, data, context, children)
+  }
+
+  // extract listeners, since these needs to be treated as
+  // child component listeners instead of DOM listeners
+  const listeners = data.on
+  // replace with listeners with .native modifier
+  // so it gets processed during parent component patch.
+  data.on = data.nativeOn
+
+  if (isTrue(Ctor.options.abstract)) {
+    const slot = data.slot
+    data = {}
+    if (slot) {
+      data.slot = slot
+    }
+  }
+
+  // 安装组件钩子函数，把钩子函数合并到data.hook中
+  installComponentHooks(data)
+
+  //实例化一个VNode返回。组件的VNode是没有children的
+  const name = Ctor.options.name || tag
+  const vnode = new VNode(
+    `vue-component-${Ctor.cid}${name ? `-${name}` : ''}`,
+    data, undefined, undefined, undefined, context,
+    { Ctor, propsData, listeners, tag, children },
+    asyncFactory
+  )
+  if (__WEEX__ && isRecyclableComponent(vnode)) {
+    return renderRecyclableComponentTemplate(vnode)
+  }
+
+  return vnode
+}
+12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061626364656667686970717273747576777879808182838485868788899091929394
+```
+
+稍微提下createComponent生成VNode的三个关键流程：
+
+- 构造子类构造函数Ctor
+- installComponentHooks安装组件钩子函数
+- 实例化 vnode
+
+## 小结
+
+createElement 创建 VNode 的过程，每个 VNode 有 children，children 每个元素也是一个VNode，这样就形成了一个虚拟树结构，用于描述真实的DOM树结构
+
+## 参考文献
+
+https://ustbhuangyi.github.io/vue-analysis/v2/data-driven/create-element.html#children-%E7%9A%84%E8%A7%84%E8%8C%83%E5%8C%96
+https://juejin.cn/post/6876711874050818061
+
+
+
+# 18 说说Vue中的diff算法
+
+因为 Diff 算法，计算的就是虚拟 DOM 的差异，所以先铺垫一点点虚拟 DOM，了解一下其结构，再来一层层揭开 Diff 算法的面纱，深入浅出，助你彻底弄懂 Diff 算法原理
+
+## 认识虚拟 DOM
+
+虚拟 DOM 简单说就是 **用JS对象来模拟 DOM 结构**
+
+那它是怎么用 JS 对象模拟 DOM 结构的呢？看个例子
+
+```html
+<template>
+    <div id="app" class="container">
+        <h1>沐华</h1>
+    </div>
+</template>
+复制代码
+```
+
+上面的模板转在虚拟 DOM 就是下面这样的
+
+```js
+{
+  tag:'div',
+  props:{ id:'app', class:'container' },
+  children: [
+    { tag: 'h1', children:'沐华' }
+  ]
+}
+复制代码
+```
+
+这样的 DOM 结构就称之为 **虚拟 DOM** (`Virtual Node`)，简称 `vnode`。
+
+它的表达方式就是把每一个标签都转为一个对象，这个对象可以有三个属性：`tag`、`props`、`children`
+
+- **tag**：必选。就是标签。也可以是组件，或者函数
+- **props**：非必选。就是这个标签上的属性和方法
+- **children**：非必选。就是这个标签的内容或者子节点，如果是文本节点就是字符串，如果有子节点就是数组。换句话说 如果判断 children 是字符串的话，就表示一定是文本节点，这个节点肯定没有子元素
+
+**为什么要使用虚拟 DOM 呢？** 看个图
+
+![image.png](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/c8647013eded4852af7041ee5d8d492f~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+如图可以看出原生 DOM 有非常多的属性和事件，就算是创建一个空div也要付出不小的代价。而使用虚拟 DOM 来提升性能的点在于 DOM 发生变化的时候，通过 diff 算法和数据改变前的 DOM 对比，计算出需要更改的 DOM，然后只对变化的 DOM 进行操作，而不是更新整个视图
+
+在 Vue 中是怎么把 DOM 转成上面这样的虚拟 DOM 的呢，有兴趣的可以关注我另一篇文章详细了解一下 Vue 中的模板编译过程和原理
+
+在 Vue 里虚拟 DOM 的数据更新机制采用的是异步更新队列，就是把变更后的数据变装入一个数据更新的异步队列，就是 `patch`，用它来做新老 vnode 对比
+
+## 认识 Diff 算法
+
+Diff 算法，在 Vue 里面就是叫做 `patch` ，它的核心就是参考 [Snabbdom](https://link.juejin.cn?target=https%3A%2F%2Fgithub.com%2Fsnabbdom%2Fsnabbdom)，通过新旧虚拟 DOM 对比(即 patch 过程)，找出最小变化的地方转为进行 DOM 操作
+
+> 扩展
+>  在 Vue1 里是没有 patch 的，每个依赖都有单独的 Watcher 负责更新，当项目规模变大的时候性能就跟不上了，所以在 Vue2 里为了提升性能，改为每个组件只有一个 Watcher，那我们需要更新的时候，怎么才能精确找到组件里发生变化的位置呢？所以 patch 它来了
+
+**那么它是在什么时候执行的呢？**
+
+在页面**首次渲染**的时候会调用一次 patch 并创建新的 vnode，不会进行更深层次的比较
+
+然后是在**组件中数据发生变化时**，会触发 `setter` 然后通过 Notify 通知 `Watcher`，对应的 `Watcher` 会通知更新并执行更新函数，它会执行 `render` 函数获取新的虚拟 DOM，然后执行 `patch` 对比上次渲染结果的老的虚拟 DOM，并计算出最小的变化，然后再去根据这个最小的变化去更新真实的 DOM，也就是视图
+
+**那么它是怎么计算的？** 先看个图
+
+![diff.jpg](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/df749067cf03454ca8cb4c78067a3407~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+比如有上图这样的 DOM 结构，是怎么计算出变化？简单说就是
+
+- 遍历老的虚拟 DOM
+- 遍历新的虚拟 DOM
+- 然后根据变化，比如上面的改变和新增，再重新排序
+
+可是这样会有很大问题，假如有1000个节点，就需要计算 1000³ 次，也就是10亿次，这样是无法让人接受的，所以 Vue 或者 React 里使用 Diff 算法的时候都遵循深度优先，同层比较的策略做了一些优化，来计算出**最小变化**
+
+### Diff 算法的优化
+
+**1. 只比较同一层级，不跨级比较**
+
+如图，Diff 过程只会把同颜色框起来的同一层级的 DOM 进行比较，这样来简化比较次数，这是第一个方面
+
+![diff1.jpg](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/ca7547df4fb24a12ae9c87d1733b78b6~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+**2. 比较标签名**
+
+如果同一层级的比较标签名不同，就直接移除老的虚拟 DOM 对应的节点，不继续按这个树状结构做深度比较，这是简化比较次数的第二个方面
+
+![diff2.jpg](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2fc6b71c2f9f4e069f878e816ac66f97~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+**3. 比较 key**
+
+如果标签名相同，key 也相同，就会认为是相同节点，也不继续按这个树状结构做深度比较，比如我们写 v-for 的时候会比较 key，不写 key 就会报错，这也就是因为 Diff 算法需要比较 key
+
+面试中有一道特别常见的题，就是让你说一下 key 的作用，实际上考查的就是大家对虚拟 DOM 和 patch 细节的掌握程度，能够反应出我们面试者的理解层次，所以这里扩展一下 key
+
+### key 的作用
+
+比如有一个列表，我们需要在中间插入一个元素，会发生什么变化呢？先看个图
+
+![diff3.jpg](https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/0dee9fb8ad4243e094c68448716fc13e~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+如图的 `li1` 和 `li2` 不会重新渲染，这个没有争议的。而 `li3、li4、li5` 都会重新渲染
+
+因为在不使用 `key` 或者列表的 `index` 作为 `key` 的时候，每个元素对应的位置关系都是 index，上图中的结果直接导致我们插入的元素到后面的全部元素，对应的位置关系都发生了变更，所以全部都会执行更新操作，这可不是我们想要的，我们希望的是渲染添加的那一个元素，其他四个元素不做任何变更，也就不要重新渲染
+
+而在使用唯一 `key`  的情况下，每个元素对应的位置关系就是 `key`，来看一下使用唯一 `key` 值的情况下
+
+![diff4.jpg](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/1882d22f62b4433aa0a91dcbe0ad09d5~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+这样如图中的 `li3` 和 `li4` 就不会重新渲染，因为元素内容没发生改变，对应的位置关系也没有发生改变。
+
+这也是为什么 v-for 必须要写 key，而且不建议开发中使用数组的 index 作为 key 的原因
+
+总结一下：
+
+- key 的作用主要是为了更高效的更新虚拟 DOM，因为它可以非常精确的找到相同节点，因此 patch 过程会非常高效
+- Vue 在 patch 过程中会判断两个节点是不是相同节点时，key 是一个必要条件。比如渲染列表时，如果不写 key，Vue 在比较的时候，就可能会导致频繁更新元素，使整个 patch 过程比较低效，影响性能
+- 应该避免使用数组下标作为 key，因为 key 值不是唯一的话可能会导致上面图中表示的 bug，使 Vue 无法区分它他，还有比如在使用相同标签元素过渡切换的时候，就会导致只替换其内部属性而不会触发过渡效果
+- 从源码里可以知道，Vue 判断两个节点是否相同时主要判断两者的元素类型和 key 等，如果不设置 key，就可能永远认为这两个是相同节点，只能去做更新操作，就造成大量不必要的 DOM 更新操作，明显是不可取的
+
+有兴趣的可以去看一下源码：`src\core\vdom\patch.js -35行 sameVnode()`，下面也有详细介绍
+
+## Diff 算法核心原理——源码
+
+上面说了Diff 算法，在 Vue 里面就是 patch，铺垫了这么多，下面进入源码里看一下这个神乎其神的 patch 干了啥？
+
+### patch
+
+源码地址：`src/core/vdom/patch.js -700行`
+
+其实 patch 就是一个函数，我们先介绍一下源码里的核心流程，再来看一下 patch 的源码，源码里每一行也有注释
+
+它可以接收四个参数，主要还是前两个
+
+- **oldVnode**：老的虚拟 DOM 节点
+- **vnode**：新的虚拟 DOM 节点
+- **hydrating**：是不是要和真实 DOM 混合，服务端渲染的话会用到，这里不过多说明
+- **removeOnly**：transition-group 会用到，这里不过多说明
+
+主要流程是这样的：
+
+- vnode 不存在，oldVnode 存在，就删掉 oldVnode
+- vnode 存在，oldVnode 不存在，就创建 vnode
+- 两个都存在的话，通过 sameVnode 函数(后面有详解)对比是不是同一节点
+  - 如果是同一节点的话，通过 patchVnode 进行后续对比节点文本变化或子节点变化
+  - 如果不是同一节点，就把 vnode 挂载到 oldVnode 的父元素下
+    - 如果组件的根节点被替换，就遍历更新父节点，然后删掉旧的节点
+    - 如果是服务端渲染就用 hydrating 把 oldVnode 和真实 DOM 混合
+
+下面看完整的 patch 函数源码，说明我都写在注释里了
+
+```js
+// 两个判断函数
+function isUndef (v: any): boolean %checks {
+  return v === undefined || v === null
+}
+function isDef (v: any): boolean %checks {
+  return v !== undefined && v !== null
+}
+return function patch (oldVnode, vnode, hydrating, removeOnly) {
+    // 如果新的 vnode 不存在，但是 oldVnode 存在
+    if (isUndef(vnode)) {
+      // 如果 oldVnode 存在，调用 oldVnode 的组件卸载钩子 destroy
+      if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
+      return
+    }
+
+    let isInitialPatch = false
+    const insertedVnodeQueue = []
+    
+    // 如果 oldVnode 不存在的话，新的 vnode 是肯定存在的，比如首次渲染的时候
+    if (isUndef(oldVnode)) {
+      isInitialPatch = true
+      // 就创建新的 vnode
+      createElm(vnode, insertedVnodeQueue)
+    } else {
+      // 剩下的都是新的 vnode 和 oldVnode 都存在的话
+      
+      // 是不是元素节点
+      const isRealElement = isDef(oldVnode.nodeType)
+      // 是元素节点 && 通过 sameVnode 对比是不是同一个节点 (函数后面有详解)
+      if (!isRealElement && sameVnode(oldVnode, vnode)) {
+        // 如果是 就用 patchVnode 进行后续对比 (函数后面有详解)
+        patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
+      } else {
+        // 如果不是同一元素节点的话
+        if (isRealElement) {
+          // const SSR_ATTR = 'data-server-rendered'
+          // 如果是元素节点 并且有 'data-server-rendered' 这个属性
+          if (oldVnode.nodeType === 1 && oldVnode.hasAttribute(SSR_ATTR)) {
+            // 就是服务端渲染的，删掉这个属性
+            oldVnode.removeAttribute(SSR_ATTR)
+            hydrating = true
+          }
+          // 这个判断里是服务端渲染的处理逻辑，就是混合
+          if (isTrue(hydrating)) {
+            if (hydrate(oldVnode, vnode, insertedVnodeQueue)) {
+              invokeInsertHook(vnode, insertedVnodeQueue, true)
+              return oldVnode
+            } else if (process.env.NODE_ENV !== 'production') {
+              warn('这是一段很长的警告信息')
+            }
+          }
+          // function emptyNodeAt (elm) {
+          //    return new VNode(nodeOps.tagName(elm).toLowerCase(), {}, [], undefined, elm)
+          //  }
+          // 如果不是服务端渲染的，或者混合失败，就创建一个空的注释节点替换 oldVnode
+          oldVnode = emptyNodeAt(oldVnode)
+        }
+        
+        // 拿到 oldVnode 的父节点
+        const oldElm = oldVnode.elm
+        const parentElm = nodeOps.parentNode(oldElm)
+        
+        // 根据新的 vnode 创建一个 DOM 节点，挂载到父节点上
+        createElm(
+          vnode,
+          insertedVnodeQueue,
+          oldElm._leaveCb ? null : parentElm,
+          nodeOps.nextSibling(oldElm)
+        )
+        
+        // 如果新的 vnode 的根节点存在，就是说根节点被修改了，就需要遍历更新父节点
+        if (isDef(vnode.parent)) {
+          let ancestor = vnode.parent
+          const patchable = isPatchable(vnode)
+          // 递归更新父节点下的元素
+          while (ancestor) {
+            // 卸载老根节点下的全部组件
+            for (let i = 0; i < cbs.destroy.length; ++i) {
+              cbs.destroy[i](ancestor)
+            }
+            // 替换现有元素
+            ancestor.elm = vnode.elm
+            if (patchable) {
+              for (let i = 0; i < cbs.create.length; ++i) {
+                cbs.create[i](emptyNode, ancestor)
+              }
+              const insert = ancestor.data.hook.insert
+              if (insert.merged) {
+                for (let i = 1; i < insert.fns.length; i++) {
+                  insert.fns[i]()
+                }
+              }
+            } else {
+              registerRef(ancestor)
+            }
+            // 更新父节点
+            ancestor = ancestor.parent
+          }
+        }
+        // 如果旧节点还存在，就删掉旧节点
+        if (isDef(parentElm)) {
+          removeVnodes([oldVnode], 0, 0)
+        } else if (isDef(oldVnode.tag)) {
+          // 否则直接卸载 oldVnode
+          invokeDestroyHook(oldVnode)
+        }
+      }
+    }
+    // 返回更新后的节点
+    invokeInsertHook(vnode, insertedVnodeQueue, isInitialPatch)
+    return vnode.elm
+  }
+复制代码
+```
+
+### sameVnode
+
+源码地址：`src/core/vdom/patch.js -35行`
+
+**这个是用来判断是不是同一节点的函数**
+
+这个函数不长，直接看源码吧
+
+```js
+function sameVnode (a, b) {
+  return (
+    a.key === b.key &&  // key 是不是一样
+    a.asyncFactory === b.asyncFactory && ( // 是不是异步组件
+      (
+        a.tag === b.tag && // 标签是不是一样
+        a.isComment === b.isComment && // 是不是注释节点
+        isDef(a.data) === isDef(b.data) && // 内容数据是不是一样
+        sameInputType(a, b) // 判断 input 的 type 是不是一样
+      ) || (
+        isTrue(a.isAsyncPlaceholder) && // 判断区分异步组件的占位符否存在
+        isUndef(b.asyncFactory.error)
+      )
+    )
+  )
+}
+复制代码
+```
+
+### patchVnode
+
+源码地址：`src/core/vdom/patch.js -501行`
+
+**这个是在新的 vnode 和 oldVnode 是同一节点的情况下，才会执行的函数，主要是对比节点文本变化或子节点变化**
+
+还是先介绍一下主要流程，再看源码吧，流程是这样的：
+
+- 如果 oldVnode 和 vnode 的引用地址是一样的，就表示节点没有变化，直接返回
+- 如果 oldVnode 的 isAsyncPlaceholder 存在，就跳过异步组件的检查，直接返回
+- 如果 oldVnode 和 vnode 都是静态节点，并且有一样的 key，并且 vnode 是克隆节点或者 v-once 指令控制的节点时，把 oldVnode.elm 和 oldVnode.child 都复制到 vnode 上，然后返回
+- 如果 vnode 不是文本节点也不是注释的情况下
+  - 如果 vnode 和 oldVnode 都有子节点，而且子节点不一样的话，就调用 updateChildren 更新子节点
+  - 如果只有 vnode 有子节点，就调用 addVnodes 创建子节点
+  - 如果只有 oldVnode 有子节点，就调用 removeVnodes 删除该子节点
+  - 如果 vnode 文本为 undefined，就删掉 vnode.elm 文本
+- 如果 vnode 是文本节点但是和 oldVnode 文本内容不一样，就更新文本
+
+```js
+  function patchVnode (
+    oldVnode, // 老的虚拟 DOM 节点
+    vnode, // 新的虚拟 DOM 节点
+    insertedVnodeQueue, // 插入节点的队列
+    ownerArray, // 节点数组
+    index, // 当前节点的下标
+    removeOnly // 只有在
+  ) {
+    // 新老节点引用地址是一样的，直接返回
+    // 比如 props 没有改变的时候，子组件就不做渲染，直接复用
+    if (oldVnode === vnode) return
+    
+    // 新的 vnode 真实的 DOM 元素
+    if (isDef(vnode.elm) && isDef(ownerArray)) {
+      // clone reused vnode
+      vnode = ownerArray[index] = cloneVNode(vnode)
+    }
+
+    const elm = vnode.elm = oldVnode.elm
+    // 如果当前节点是注释或 v-if 的，或者是异步函数，就跳过检查异步组件
+    if (isTrue(oldVnode.isAsyncPlaceholder)) {
+      if (isDef(vnode.asyncFactory.resolved)) {
+        hydrate(oldVnode.elm, vnode, insertedVnodeQueue)
+      } else {
+        vnode.isAsyncPlaceholder = true
+      }
+      return
+    }
+    // 当前节点是静态节点的时候，key 也一样，或者有 v-once 的时候，就直接赋值返回
+    if (isTrue(vnode.isStatic) &&
+      isTrue(oldVnode.isStatic) &&
+      vnode.key === oldVnode.key &&
+      (isTrue(vnode.isCloned) || isTrue(vnode.isOnce))
+    ) {
+      vnode.componentInstance = oldVnode.componentInstance
+      return
+    }
+    // hook 相关的不用管
+    let i
+    const data = vnode.data
+    if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
+      i(oldVnode, vnode)
+    }
+    // 获取子元素列表
+    const oldCh = oldVnode.children
+    const ch = vnode.children
+    
+    if (isDef(data) && isPatchable(vnode)) {
+      // 遍历调用 update 更新 oldVnode 所有属性，比如 class,style,attrs,domProps,events...
+      // 这里的 update 钩子函数是 vnode 本身的钩子函数
+      for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
+      // 这里的 update 钩子函数是我们传过来的函数
+      if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
+    }
+    // 如果新节点不是文本节点，也就是说有子节点
+    if (isUndef(vnode.text)) {
+      // 如果新老节点都有子节点
+      if (isDef(oldCh) && isDef(ch)) {
+        // 如果新老节点的子节点不一样，就执行 updateChildren 函数，对比子节点
+        if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)
+      } else if (isDef(ch)) {
+        // 如果新节点有子节点的话，就是说老节点没有子节点
+        
+        // 如果老节点文本节点，就是说没有子节点，就清空
+        if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '')
+        // 添加子节点
+        addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)
+      } else if (isDef(oldCh)) {
+        // 如果新节点没有子节点，老节点有子节点，就删除
+        removeVnodes(oldCh, 0, oldCh.length - 1)
+      } else if (isDef(oldVnode.text)) {
+        // 如果老节点是文本节点，就清空
+        nodeOps.setTextContent(elm, '')
+      }
+    } else if (oldVnode.text !== vnode.text) {
+      // 新老节点都是文本节点，且文本不一样，就更新文本
+      nodeOps.setTextContent(elm, vnode.text)
+    }
+    if (isDef(data)) {
+      // 执行 postpatch 钩子
+      if (isDef(i = data.hook) && isDef(i = i.postpatch)) i(oldVnode, vnode)
+    }
+  }
+复制代码
+```
+
+### updateChildren
+
+源码地址：`src/core/vdom/patch.js -404行`
+
+**这个是新的 vnode 和 oldVnode 都有子节点，且子节点不一样的时候进行对比子节点的函数**
+
+这里很关键，很关键！
+
+比如现在有两个子节点列表对比，对比主要流程如下
+
+循环遍历两个列表，循环停止条件是：其中一个列表的开始指针 startIdx 和 结束指针 endIdx 重合
+
+循环内容是：{
+
+- 新的头和老的头对比
+- 新的尾和老的尾对比
+- 新的头和老的尾对比
+- 新的尾和老的头对比。  这四种对比如图
+
+![diff2.gif](https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9b89cbc2280940038f5550bf9b7370aa~tplv-k3u1fbpfcp-zoom-in-crop-mark:1304:0:0:0.awebp?)
+
+以上四种只要有一种判断相等，就调用 patchVnode 对比节点文本变化或子节点变化，然后移动对比的下标，继续下一轮循环对比
+
+如果以上四种情况都没有命中，就不断拿新的开始节点的 key 去老的 children 里找
+
+- 如果没找到，就创建一个新的节点
+- 如果找到了，再对比标签是不是同一个节点
+  - 如果是同一个节点，就调用 patchVnode 进行后续对比，然后把这个节点插入到老的开始前面，并且移动新的开始下标，继续下一轮循环对比
+  - 如果不是相同节点，就创建一个新的节点
+
+}
+
+- 如果老的 vnode 先遍历完，就添加新的 vnode 没有遍历的节点
+- 如果新的 vnode 先遍历完，就删除老的 vnode 没有遍历的节点
+
+为什么会有头对尾，尾对头的操作？
+
+因为可以快速检测出 reverse 操作，加快 Diff 效率
+
+```js
+function updateChildren (parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
+    let oldStartIdx = 0 // 老 vnode 遍历的下标
+    let newStartIdx = 0 // 新 vnode 遍历的下标
+    let oldEndIdx = oldCh.length - 1 // 老 vnode 列表长度
+    let oldStartVnode = oldCh[0] // 老 vnode 列表第一个子元素
+    let oldEndVnode = oldCh[oldEndIdx] // 老 vnode 列表最后一个子元素
+    let newEndIdx = newCh.length - 1 // 新 vnode 列表长度
+    let newStartVnode = newCh[0] // 新 vnode 列表第一个子元素
+    let newEndVnode = newCh[newEndIdx] // 新 vnode 列表最后一个子元素
+    let oldKeyToIdx, idxInOld, vnodeToMove, refElm
+
+    const canMove = !removeOnly
+    
+    // 循环，规则是开始指针向右移动，结束指针向左移动移动
+    // 当开始和结束的指针重合的时候就结束循环
+    while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
+      if (isUndef(oldStartVnode)) {
+        oldStartVnode = oldCh[++oldStartIdx] // Vnode has been moved left
+      } else if (isUndef(oldEndVnode)) {
+        oldEndVnode = oldCh[--oldEndIdx]
+        
+        // 老开始和新开始对比
+      } else if (sameVnode(oldStartVnode, newStartVnode)) {
+        // 是同一节点 递归调用 继续对比这两个节点的内容和子节点
+        patchVnode(oldStartVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
+        // 然后把指针后移一位，从前往后依次对比
+        // 比如第一次对比两个列表的[0]，然后比[1]...，后面同理
+        oldStartVnode = oldCh[++oldStartIdx]
+        newStartVnode = newCh[++newStartIdx]
+        
+        // 老结束和新结束对比
+      } else if (sameVnode(oldEndVnode, newEndVnode)) {
+        patchVnode(oldEndVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx)
+        // 然后把指针前移一位，从后往前比
+        oldEndVnode = oldCh[--oldEndIdx]
+        newEndVnode = newCh[--newEndIdx]
+        
+        // 老开始和新结束对比
+      } else if (sameVnode(oldStartVnode, newEndVnode)) { // Vnode moved right
+        patchVnode(oldStartVnode, newEndVnode, insertedVnodeQueue, newCh, newEndIdx)
+        canMove && nodeOps.insertBefore(parentElm, oldStartVnode.elm, nodeOps.nextSibling(oldEndVnode.elm))
+        // 老的列表从前往后取值，新的列表从后往前取值，然后对比
+        oldStartVnode = oldCh[++oldStartIdx]
+        newEndVnode = newCh[--newEndIdx]
+        
+        // 老结束和新开始对比
+      } else if (sameVnode(oldEndVnode, newStartVnode)) { // Vnode moved left
+        patchVnode(oldEndVnode, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
+        canMove && nodeOps.insertBefore(parentElm, oldEndVnode.elm, oldStartVnode.elm)
+        // 老的列表从后往前取值，新的列表从前往后取值，然后对比
+        oldEndVnode = oldCh[--oldEndIdx]
+        newStartVnode = newCh[++newStartIdx]
+        
+        // 以上四种情况都没有命中的情况
+      } else {
+        if (isUndef(oldKeyToIdx)) oldKeyToIdx = createKeyToOldIdx(oldCh, oldStartIdx, oldEndIdx)
+        // 拿到新开始的 key，在老的 children 里去找有没有某个节点有这个 key
+        idxInOld = isDef(newStartVnode.key)
+          ? oldKeyToIdx[newStartVnode.key]
+          : findIdxInOld(newStartVnode, oldCh, oldStartIdx, oldEndIdx)
+          
+        // 新的 children 里有，可是没有在老的 children 里找到对应的元素
+        if (isUndef(idxInOld)) {
+          /// 就创建新的元素
+          createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx)
+        } else {
+          // 在老的 children 里找到了对应的元素
+          vnodeToMove = oldCh[idxInOld]
+          // 判断标签如果是一样的
+          if (sameVnode(vnodeToMove, newStartVnode)) {
+            // 就把两个相同的节点做一个更新
+            patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue, newCh, newStartIdx)
+            oldCh[idxInOld] = undefined
+            canMove && nodeOps.insertBefore(parentElm, vnodeToMove.elm, oldStartVnode.elm)
+          } else {
+            // 如果标签是不一样的，就创建新的元素
+            createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm, false, newCh, newStartIdx)
+          }
+        }
+        newStartVnode = newCh[++newStartIdx]
+      }
+    }
+    // oldStartIdx > oldEndIdx 说明老的 vnode 先遍历完
+    if (oldStartIdx > oldEndIdx) {
+      // 就添加从 newStartIdx 到 newEndIdx 之间的节点
+      refElm = isUndef(newCh[newEndIdx + 1]) ? null : newCh[newEndIdx + 1].elm
+      addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue)
+    
+    // 否则就说明新的 vnode 先遍历完
+    } else if (newStartIdx > newEndIdx) {
+      // 就删除掉老的 vnode 里没有遍历的节点
+      removeVnodes(oldCh, oldStartIdx, oldEndIdx)
+    }
+  }
+复制代码
+```
+
+至此，整个 Diff 流程的核心逻辑源码到这就结束了，再来看一下 Vue 3 里做了哪些改变吧
+
+## Vue3 的优化
+
+本文源码版本是 Vue2 的，在 Vue3 里整个重写了 Diff 算法这一块东西，所以源码的话可以说基本是完全**不一样**的，但是要做的事还是一样的
+
+关于 Vue3 的 Diff 完整源码解析还在撰稿中，过几天就发布了，这里先介绍一下相比 Vue2 优化的部分，尤大公布的数据就是 `update` 性能提升了 `1.3~2 倍`，`ssr` 性能提升了 `2~3 倍`，来看看都有哪些优化
+
+- 事件缓存：将事件缓存，可以理解为变成静态的了
+- 添加静态标记：Vue2 是全量 Diff，Vue3 是静态标记 + 非全量 Diff
+- 静态提升：创建静态节点时保存，后续直接复用
+- 使用最长递增子序列优化了对比流程：Vue2 里在 updateChildren() 函数里对比变更，在 Vue3 里这一块的逻辑主要在 patchKeyedChildren() 函数里，具体看下面
+
+### 事件缓存
+
+比如这样一个有点击事件的按钮
+
+```js
+<button @click="handleClick">按钮</button>
+复制代码
+```
+
+来看下在 Vue3 被编译后的结果
+
+```js
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createElementBlock("button", {
+    onClick: _cache[0] || (_cache[0] = (...args) => (_ctx.handleClick && _ctx.handleClick(...args)))
+  }, "按钮"))
+}
+复制代码
+```
+
+注意看，onClick 会先读取缓存，如果缓存没有的话，就把传入的事件存到缓存里，都可以理解为变成静态节点了，优秀吧，而在 Vue2 中就没有缓存，就是动态的
+
+### 静态标记
+
+看一下静态标记是啥？
+
+源码地址：`packages/shared/src/patchFlags.ts`
+
+```js
+export const enum PatchFlags {
+  TEXT = 1 ,  // 动态文本节点
+  CLASS = 1 << 1,  // 2   动态class
+  STYLE = 1 << 2,  // 4   动态style
+  PROPS = 1 << 3,  // 8   除去class/style以外的动态属性
+  FULL_PROPS = 1 << 4,       // 16  有动态key属性的节点，当key改变时，需进行完整的diff比较
+  HYDRATE_EVENTS = 1 << 5,   // 32  有监听事件的节点
+  STABLE_FRAGMENT = 1 << 6,  // 64  一个不会改变子节点顺序的fragment (一个组件内多个根元素就会用fragment包裹)
+  KEYED_FRAGMENT = 1 << 7,   // 128 带有key属性的fragment或部分子节点有key
+  UNKEYEN_FRAGMENT = 1 << 8, // 256  子节点没有key的fragment
+  NEED_PATCH = 1 << 9,       // 512  一个节点只会进行非props比较
+  DYNAMIC_SLOTS = 1 << 10,   // 1024   动态slot
+  HOISTED = -1,  // 静态节点 
+  BAIL = -2      // 表示 Diff 过程中不需要优化
+}
+
+```
+
+先了解一下静态标记有什么用？看个图
+
+在什么地方用到的呢？比如下面这样的代码
+
+```js
+<div id="app">
+    <div>沐华</div>
+    <p>{{ age }}</p>
+</div>
+```
+
+在 Vue2 中编译的结果是，有兴趣的可以自行安装 `vue-template-compiler` 自行测试
+
+```js
+with(this){
+    return _c(
+      'div',
+      {attrs:{"id":"app"}},
+      [ 
+        _c('div',[_v("沐华")]),
+        _c('p',[_v(_s(age))])
+      ]
+    )
+}
+```
+
+在 Vue3 中编译的结果是这样的，有兴趣的可以[点击这里](https://link.juejin.cn?target=https%3A%2F%2Fvue-next-template-explorer.netlify.app%2F)自行测试
+
+```js
+const _hoisted_1 = { id: "app" }
+const _hoisted_2 = /*#__PURE__*/_createElementVNode("div", null, "沐华", -1 /* HOISTED */)
+
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createElementBlock("div", _hoisted_1, [
+    _hoisted_2,
+    _createElementVNode("p", null, _toDisplayString(_ctx.age), 1 /* TEXT */)
+  ]))
+}
+```
+
+看到上面编译结果中的 `-1` 和 `1` 了吗，这就是静态标记，这是在 Vue2 中没有的，patch 过程中就会判断这个标记来 Diff 优化流程，跳过一些静态节点对比
+
+### 静态提升
+
+其实还是拿上面 Vue2 和 Vue3 静态标记的例子，在 Vue2 里每当触发更新的时候，不管元素是否参与更新，每次都会全部重新创建，就是下面这一堆
+
+```js
+with(this){
+    return _c(
+      'div',
+      {attrs:{"id":"app"}},
+      [ 
+        _c('div',[_v("沐华")]),
+        _c('p',[_v(_s(age))])
+      ]
+    )
+}
+```
+
+而在 Vue3 中会把这个不参与更新的元素保存起来，只创建一次，之后在每次渲染的时候不停地复用，比如上面例子中的这个，静态的创建一次保存起来
+
+```js
+const _hoisted_1 = { id: "app" }
+const _hoisted_2 = /*#__PURE__*/_createElementVNode("div", null, "沐华", -1 /* HOISTED */)
+```
+
+然后每次更新 age 的时候，就只创建这个动态的内容，复用上面保存的静态内容
+
+```js
+export function render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createElementBlock("div", _hoisted_1, [
+    _hoisted_2,
+    _createElementVNode("p", null, _toDisplayString(_ctx.age), 1 /* TEXT */)
+  ]))
+}
+```
+
+### patchKeyedChildren
+
+在 Vue2 里 `updateChildren` 会进行
+
+- 头和头比
+- 尾和尾比
+- 头和尾比
+- 尾和头比
+- 都没有命中的对比
+
+在 Vue3 里 `patchKeyedChildren` 为
+
+- 头和头比
+- 尾和尾比
+- 基于最长递增子序列进行移动/添加/删除
+
+看个例子，比如
+
+- 老的 children：`[ a, b, c, d, e, f, g ]`
+- 新的 children：`[ a, b, f, c, d, e, h, g ]`
+
+1. 先进行头和头比，发现不同就结束循环，得到 `[ a, b ]`
+2. 再进行尾和尾比，发现不同就结束循环，得到 `[ g ]`
+3. 再保存没有比较过的节点 `[ f, c, d, e, h ]`，并通过 newIndexToOldIndexMap 拿到在数组里对应的下标，生成数组 `[ 5, 2, 3, 4, -1 ]`，`-1` 是老数组里没有的就说明是新增
+4. 然后再拿取出数组里的最长递增子序列，也就是 `[ 2, 3, 4 ]` 对应的节点 `[ c, d, e ]`
+5. 然后只需要把其他剩余的节点，基于 `[ c, d, e ]` 的位置进行移动/新增/删除就可以了
+
+使用最长递增子序列可以最大程度的减少 DOM 的移动，达到最少的 DOM 操作，有兴趣的话去 leet-code 第300题(最长递增子序列) 体验下
+
+参考链接：https://juejin.cn/post/7010594233253888013
+
+# 19. 跨域是什么？Vue项目中你是如何解决跨域的呢
+
+## 一、跨域是什么
+
+跨域本质是浏览器基于**同源策略**的一种安全手段
+
+同源策略（Sameoriginpolicy），是一种约定，它是浏览器最核心也最基本的安全功能
+
+所谓同源（即指在同一个域）具有以下三个相同点
+
+- 协议相同（protocol）
+- 主机相同（host）
+- 端口相同（port）
+
+反之非同源请求，也就是协议、端口、主机其中一项不相同的时候，这时候就会产生跨域
+
+> 一定要注意跨域是浏览器的限制，你用抓包工具抓取接口数据，是可以看到接口已经把数据返回回来了，只是浏览器的限制，你获取不到数据。用postman请求接口能够请求到数据。这些再次印证了跨域是浏览器的限制。
+
+## 二、如何解决
+
+解决跨域的方法有很多，下面列举了三种：
+
+- JSONP
+- CORS
+- Proxy
+
+而在`vue`项目中，我们主要针对`CORS`或`Proxy`这两种方案进行展开
+
+### CORS
+
+CORS （Cross-Origin Resource Sharing，跨域资源共享）是一个系统，它由一系列传输的HTTP头组成，这些HTTP头决定浏览器是否阻止前端 JavaScript 代码获取跨域请求的响应
+
+`CORS` 实现起来非常方便，只需要增加一些 `HTTP` 头，让服务器能声明允许的访问来源
+
+只要后端实现了 `CORS`，就实现了跨域
+
+[![img](https://camo.githubusercontent.com/b3c479dfb3a8a479fffd4028f18aab4eb5504297960d52e89c32cca01448ea57/68747470733a2f2f7374617469632e7675652d6a732e636f6d2f31343064656238302d346533322d313165622d616239302d6439616538313462323430642e706e67)](https://camo.githubusercontent.com/b3c479dfb3a8a479fffd4028f18aab4eb5504297960d52e89c32cca01448ea57/68747470733a2f2f7374617469632e7675652d6a732e636f6d2f31343064656238302d346533322d313165622d616239302d6439616538313462323430642e706e67)
+
+以` koa`框架举例
+
+添加中间件，直接设置`Access-Control-Allow-Origin`请求头
+
+```
+app.use(async (ctx, next)=> {
+  ctx.set('Access-Control-Allow-Origin', '*');
+  ctx.set('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
+  ctx.set('Access-Control-Allow-Methods', 'PUT, POST, GET, DELETE, OPTIONS');
+  if (ctx.method == 'OPTIONS') {
+    ctx.body = 200; 
+  } else {
+    await next();
+  }
+})
+```
+
+ps: `Access-Control-Allow-Origin` 设置为*其实意义不大，可以说是形同虚设，实际应用中，上线前我们会将`Access-Control-Allow-Origin` 值设为我们目标`host`
+
+### Proxy
+
+代理（Proxy）也称网络代理，是一种特殊的网络服务，允许一个（一般为客户端）通过这个服务与另一个网络终端（一般为服务器）进行非直接的连接。一些网关、路由器等网络设备具备网络代理功能。一般认为代理服务有利于保障网络终端的隐私或安全，防止攻击
+
+**方案一**
+
+如果是通过`vue-cli`脚手架工具搭建项目，我们可以通过`webpack`为我们起一个本地服务器作为请求的代理对象
+
+通过该服务器转发请求至目标服务器，得到结果再转发给前端，但是最终发布上线时如果web应用和接口服务器不在一起仍会跨域
+
+在`vue.config.js`文件，新增以下代码
+
+```
+amodule.exports = {
+    devServer: {
+        host: '127.0.0.1',
+        port: 8084,
+        open: true,// vue项目启动时自动打开浏览器
+        proxy: {
+            '/api': { // '/api'是代理标识，用于告诉node，url前面是/api的就是使用代理的
+                target: "http://xxx.xxx.xx.xx:8080", //目标地址，一般是指后台服务器地址
+                changeOrigin: true, //是否跨域
+                pathRewrite: { // pathRewrite 的作用是把实际Request Url中的'/api'用""代替
+                    '^/api': "" 
+                }
+            }
+        }
+    }
+}
+```
+
+通过`axios`发送请求中，配置请求的根路径
+
+```
+axios.defaults.baseURL = '/api'
+```
+
+**方案二**
+
+此外，还可通过服务端实现代理请求转发
+
+以`express`框架为例
+
+```
+var express = require('express');
+const proxy = require('http-proxy-middleware')
+const app = express()
+app.use(express.static(__dirname + '/'))
+app.use('/api', proxy({ target: 'http://localhost:4000', changeOrigin: false
+                      }));
+module.exports = app
+```
+
+**方案三**
+
+通过配置`nginx`实现代理
+
+```
+server {
+    listen    80;
+    # server_name www.josephxia.com;
+    location / {
+        root  /var/www/html;
+        index  index.html index.htm;
+        try_files $uri $uri/ /index.html;
+    }
+    location /api {
+        proxy_pass  http://127.0.0.1:3000;
+        proxy_redirect   off;
+        proxy_set_header  Host       $host;
+        proxy_set_header  X-Real-IP     $remote_addr;
+        proxy_set_header  X-Forwarded-For  $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+# 20.vuex与redux有什么区别？
+
+# 21.vue-router与location.href有什么区别？
